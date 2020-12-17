@@ -1,20 +1,3 @@
-function angle(cx, cy, ex, ey)
-{
-  var dy = ey - cy;
-  var dx = ex - cx;
-  var theta = Math.atan2(dy, dx); // range (-PI, PI]
-  theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
-  //if (theta < 0) theta = 360 + theta; // range [0, 360)
-  return theta;
-}
-
-function angle360(cx, cy, ex, ey)
-{
-  var theta = angle(cx, cy, ex, ey); // range (-180, 180]
-  if (theta < 0) theta = 360 + theta; // range [0, 360)
-  return theta;
-}
-
 const canvas = document.createElement("canvas")
 document.querySelector("body").appendChild(canvas)
 const ctx = canvas.getContext("2d")
@@ -43,36 +26,58 @@ function getRandomPoints(number)
   return points.sort((a, b) => a.x - b.x)
 }
 
+function angle(cx, cy, ex, ey)
+{
+  const dy = ey - cy;
+  const dx = ex - cx;
+  let theta = Math.atan2(dy, dx); // range (-PI, PI]
+  theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
+  //if (theta < 0) theta = 360 + theta; // range [0, 360)
+  return theta;
+}
+
+function getCenter(arr)
+{
+  const x = arr.map(xy => xy.x);
+  const y = arr.map(xy => xy.y);
+  const cx = (Math.min(...x) + Math.max(...x)) / 2;
+  const cy = (Math.min(...y) + Math.max(...y)) / 2;
+  return { x: cx, y: cy };
+}
+
 function createRandomPoly(edges)
 {
   let points = getRandomPoints(edges)
-  points[0] = { x: canvas.width / 2, y: canvas.height / 2 }
+  const middle = getCenter(points)
+
+  points = points.sort((a, b) => angle(middle.x, middle.y, a.x, a.y) - angle(middle.x, middle.y, b.x, b.y))
+
+  // ctx.moveTo(middle.x, middle.y)
+  // ctx.ellipse(middle.x, middle.y, 3, 3, Math.PI / 4, 0, 2 * Math.PI)
+  // ctx.stroke()
 
   for (let i = 0; i < points.length; i++)
   {
-    ctx.fillStyle = 'black'
-    ctx.beginPath()
-    ctx.moveTo(points[0].x, points[0].y)
-    ctx.lineTo(points[i].x, points[i].y)
-    ctx.stroke()
-  }
+    let a = points[i],
+      b = points[i + 1]
 
-  points = points.sort((a, b) => angle360(canvas.width / 2, canvas.height / 2, a.x, a.y) - angle360(canvas.width / 2, canvas.height / 2, b.x, b.y))
-  points = points.filter(point => angle360(canvas.width / 2, canvas.height / 2, point.x, point.y) !== 0)
-
-  console.log(points)
-
-  for (let i = 0; i < points.length; i++)
-  {
-    ctx.fillStyle = 'black'
-    if (points[i + 1])
+    if (b)
     {
-      ctx.moveTo(points[i].x, points[i].y)
-      ctx.lineTo(points[i + 1].x, points[i + 1].y)
+      ctx.fillStyle = 'black'
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      // ctx.ellipse(a.x, a.y, 3, 3, Math.PI / 4, 0, 2 * Math.PI)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
     }
-    ctx.stroke()
+    else
+    {
+      ctx.moveTo(a.x, a.y)
+      // ctx.ellipse(a.x, a.y, 3, 3, Math.PI / 4, 0, 2 * Math.PI)
+      ctx.lineTo(points[0].x, points[0].y)
+      ctx.stroke()
+    }
   }
+
 }
-
 createRandomPoly(4)
-
